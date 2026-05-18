@@ -19,11 +19,14 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import roc_auc_score
 
 # ─── CONFIGURATION ───
+# ─── REGIONAL CONFIGURATION (EXPANDED SCOPE) ───
 CITIES = {
-    'Jakarta':   {'lat': -6.2088, 'lon': 106.8456},
-    'Bangkok':   {'lat': 13.7563, 'lon': 100.5018},
-    'Manila':    {'lat': 14.5995, 'lon': 120.9842},
-    'Singapore': {'lat': 1.3521,  'lon': 103.8198}
+    'Jakarta':       {'lat': -6.2088, 'lon': 106.8456},
+    'Bangkok':       {'lat': 13.7563, 'lon': 100.5018},
+    'Manila':        {'lat': 14.5995, 'lon': 120.9842},
+    'Kuala Lumpur':  {'lat': 3.1390,  'lon': 101.6869},
+    'Singapore':     {'lat': 1.3521,  'lon': 103.8198},
+    'Yogyakarta':    {'lat': -7.7956, 'lon': 110.3695}
 }
 
 START_DATE = '2010-01-01'
