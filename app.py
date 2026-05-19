@@ -9,6 +9,47 @@ from datetime import datetime
 
 st.set_page_config(page_title="SEA Heatwave Radar - Comparison Mode", page_icon=":material/thermostat:", layout="wide")
 
+# --- CSS INJECTION ---
+st.markdown("""
+<style>
+    /* Hide Streamlit branding and header/footer */
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    /* Reduce default massive top padding */
+    .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 1rem !important;
+    }
+    
+    /* Premium Metric Cards */
+    [data-testid="stMetric"] {
+        background-color: var(--secondary-background-color);
+        border: 1px solid rgba(150, 150, 150, 0.2);
+        border-radius: 12px;
+        padding: 1.2rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+    }
+    
+    [data-testid="stMetric"]:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        border-color: #FF9800 !important; /* Subtle orange accent on hover */
+    }
+    
+    /* Style the risk percentage boxes to look like modern badges */
+    [data-testid="stAlert"] {
+        padding: 0.5rem;
+        border-radius: 8px;
+        text-align: center;
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+</style>
+""", unsafe_allow_html=True)
+
 CITIES = {
     'Jakarta':       {'lat': -6.2088, 'lon': 106.8456},
     'Bangkok':       {'lat': 13.7563, 'lon': 100.5018},
@@ -52,12 +93,19 @@ def fetch_live_weather(lat, lon):
     df['doy_cos'] = np.cos(2 * np.pi * df.index.dayofyear / 365)
     return df
 
-# Sidebar
-st.sidebar.title(":material/compare: Architecture Comparison")
-selected_city = st.sidebar.selectbox("Select Target Region", list(CITIES.keys()))
+# Top Container for Title
+title_container = st.container()
+
+# Region Selector
+st.markdown("### :material/location_on: Select Target Region")
+selected_city = st.radio("Region", list(CITIES.keys()), horizontal=True, label_visibility="collapsed")
 lat, lon = CITIES[selected_city]['lat'], CITIES[selected_city]['lon']
 
-st.title(f":material/dashboard: {selected_city} Model Comparison Dashboard", help="Dashboard comparing Deep Learning and Traditional ML models for predicting heatwave risks based on 14 days of historical weather patterns.")
+st.markdown("---")
+
+# Render Title at the very top using the selected city
+with title_container:
+    st.title(f":material/dashboard: SEA Heatwave Radar - {selected_city}", help="Dashboard comparing Deep Learning and Traditional ML models for predicting heatwave risks based on 14 days of historical weather patterns.")
 
 try:
     lstm_model, rf_model, scaler, threshold_95 = load_models(selected_city)
@@ -98,7 +146,7 @@ try:
     st.markdown("### :material/memory: Deep Learning LSTM Outlook", help="Long Short-Term Memory Neural Network. A deep learning model that analyzes the chronological sequence of weather patterns over the past 14 days.")
     cols_lstm = st.columns(7)
     for i, c in enumerate(cols_lstm):
-        c.markdown(f"**{future_dates[i].strftime('%a')}**")
+        c.markdown(f"<div style='text-align: center; font-weight: bold; margin-bottom: 5px;'>{future_dates[i].strftime('%a')}</div>", unsafe_allow_html=True)
         score = lstm_risks[i]
         if score < 0.5: c.success(f"{score*100:.0f}%")
         elif score < 0.75: c.warning(f"{score*100:.0f}%")
@@ -107,7 +155,7 @@ try:
     st.markdown("### :material/forest: Random Forest ML Outlook", help="An ensemble of 100 decision trees. It treats the past 14 days as 84 independent data points to find risk patterns without strict chronological order.")
     cols_rf = st.columns(7)
     for i, c in enumerate(cols_rf):
-        c.markdown(f"**{future_dates[i].strftime('%a')}**")
+        c.markdown(f"<div style='text-align: center; font-weight: bold; margin-bottom: 5px;'>{future_dates[i].strftime('%a')}</div>", unsafe_allow_html=True)
         score = rf_risks[i]
         if score < 0.5: c.success(f"{score*100:.0f}%")
         elif score < 0.75: c.warning(f"{score*100:.0f}%")
@@ -123,6 +171,13 @@ try:
     fig.add_trace(go.Scatter(x=[df_all.index[0], df_all.index[-1]], y=[threshold_95, threshold_95], mode='lines', name='95th Pct Danger Limit', line=dict(color='#FF9800', width=2, dash='dot')))
     
     st.plotly_chart(fig, use_container_width=True)
+
+    with st.expander(":material/info: What is the 95th Percentile Danger Limit?"):
+        st.markdown("""
+        The **95th Percentile Danger Limit** is a localized threshold calculated specifically for each city based on 14 years of historical weather data. 
+        
+        Instead of using a generic temperature to define a heatwave, the system mathematically finds the Heat Index that was only exceeded **5% of the time** in that city's history. This means the orange dotted line represents the top 5% most extreme heat events for that specific region. If the forecast crosses this line, it is considered a severe and dangerous anomaly.
+        """)
 
 except Exception as e:
     st.error(f":material/warning: Application Error: {e}")
